@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
-import App from '../App'
+import { App } from '../App'
 import { useNavigationStore } from '../shared/store'
 
 describe('Main Menu → New Game → World Map', () => {
