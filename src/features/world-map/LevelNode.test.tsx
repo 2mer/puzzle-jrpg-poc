@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import userEvent from "@testing-library/user-event"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { LevelNode } from "./LevelNode"
 
 afterEach(cleanup)
@@ -42,5 +43,29 @@ describe("LevelNode", () => {
   it("shows threshold indicator when threshold=true", () => {
     render(<LevelNode level={{ ...baseLevel, threshold: true }} state="locked" />)
     expect(screen.getByText("◆")).toBeInTheDocument()
+  })
+
+  it("calls onClick when unlocked and clicked", async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+    render(<LevelNode level={baseLevel} state="unlocked" onClick={onClick} />)
+    await user.click(screen.getByTestId("level-node"))
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  it("calls onClick when completed and clicked", async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+    render(<LevelNode level={baseLevel} state="completed" onClick={onClick} />)
+    await user.click(screen.getByTestId("level-node"))
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not call onClick when locked", async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+    render(<LevelNode level={baseLevel} state="locked" onClick={onClick} />)
+    await user.click(screen.getByTestId("level-node"))
+    expect(onClick).not.toHaveBeenCalled()
   })
 })

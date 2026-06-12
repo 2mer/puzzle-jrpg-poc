@@ -8,7 +8,7 @@ import { useScreenStore } from "../providers/screen-store"
 describe("Main Menu → New Game → World Map", () => {
   beforeEach(() => {
     cleanup()
-    useScreenStore.setState({ screen: "main-menu" })
+    useScreenStore.setState({ screen: "main-menu", battleLevelId: null })
     useSaveStore.setState({
       completedLevelIds: [],
       unlockedCompanionIds: [],

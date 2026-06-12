@@ -6,14 +6,16 @@ import { Check } from "lucide-react"
 interface LevelNodeProps {
   level: LevelDefinition
   state: LevelState
+  onClick?: () => void
   "data-testid"?: string
 }
 
-export function LevelNode({ level, state, "data-testid": testId }: LevelNodeProps) {
+export function LevelNode({ level, state, onClick, "data-testid": testId }: LevelNodeProps) {
   return (
     <div
       data-testid={testId ?? "level-node"}
       data-state={state}
+      onClick={state !== "locked" ? onClick : undefined}
       className={clsx(
         "absolute flex flex-col items-center justify-center w-28 h-28 rounded-full border-2 transition-all",
         state === "locked" && "opacity-50 cursor-not-allowed border-gray-600 bg-gray-800",

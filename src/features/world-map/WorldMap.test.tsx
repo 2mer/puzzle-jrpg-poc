@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import userEvent from "@testing-library/user-event"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { LEVELS } from "./levels"
 import { WorldMap } from "./WorldMap"
 
@@ -57,5 +58,29 @@ describe("WorldMap", () => {
   it("renders a back to main menu button when onBack is provided", () => {
     render(<WorldMap completedLevelIds={[]} onBack={() => {}} />)
     expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument()
+  })
+
+  it("calls onLevelClick with level id when an unlocked level is clicked", async () => {
+    const user = userEvent.setup()
+    const onLevelClick = vi.fn()
+    render(<WorldMap completedLevelIds={[]} onLevelClick={onLevelClick} />)
+    await user.click(screen.getByTestId("level-node-level-1"))
+    expect(onLevelClick).toHaveBeenCalledWith("level-1")
+  })
+
+  it("calls onLevelClick when a completed level is clicked", async () => {
+    const user = userEvent.setup()
+    const onLevelClick = vi.fn()
+    render(<WorldMap completedLevelIds={["level-1"]} onLevelClick={onLevelClick} />)
+    await user.click(screen.getByTestId("level-node-level-1"))
+    expect(onLevelClick).toHaveBeenCalledWith("level-1")
+  })
+
+  it("does not call onLevelClick when a locked level is clicked", async () => {
+    const user = userEvent.setup()
+    const onLevelClick = vi.fn()
+    render(<WorldMap completedLevelIds={[]} onLevelClick={onLevelClick} />)
+    await user.click(screen.getByTestId("level-node-level-2"))
+    expect(onLevelClick).not.toHaveBeenCalled()
   })
 })

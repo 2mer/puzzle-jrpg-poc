@@ -7,7 +7,7 @@ import { useScreenStore } from "../providers/screen-store"
 
 afterEach(() => {
   cleanup()
-  useScreenStore.setState({ screen: "main-menu" })
+  useScreenStore.setState({ screen: "main-menu", battleLevelId: null })
   useSaveStore.setState({
     completedLevelIds: [],
     unlockedCompanionIds: [],
@@ -43,5 +43,31 @@ describe("App integration", () => {
     render(<App />)
     await user.click(screen.getByRole("button", { name: /back/i }))
     expect(screen.getByText("Puzzle JRPG")).toBeInTheDocument()
+  })
+
+  it("clicking an unlocked level transitions to battle screen with level name", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /new game/i }))
+    await user.click(screen.getByTestId("level-node-level-2"))
+    expect(screen.getByText("Battle: Forest Path")).toBeInTheDocument()
+  })
+
+  it("clicking Run on battle screen returns to world map", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /new game/i }))
+    await user.click(screen.getByTestId("level-node-level-2"))
+    await user.click(screen.getByRole("button", { name: /run/i }))
+    expect(screen.getByText("World Map")).toBeInTheDocument()
+  })
+
+  it("clicking a locked level does not transition to battle", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /new game/i }))
+    await user.click(screen.getByTestId("level-node-level-4"))
+    expect(screen.queryByText("Battle: Sky Summit")).not.toBeInTheDocument()
+    expect(screen.getByText("World Map")).toBeInTheDocument()
   })
 })

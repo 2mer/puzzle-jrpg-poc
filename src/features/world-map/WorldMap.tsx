@@ -6,9 +6,10 @@ import { LevelNode } from "./LevelNode"
 interface WorldMapProps {
   completedLevelIds: string[]
   onBack?: () => void
+  onLevelClick?: (levelId: string) => void
 }
 
-export function WorldMap({ completedLevelIds, onBack }: WorldMapProps) {
+export function WorldMap({ completedLevelIds, onBack, onLevelClick }: WorldMapProps) {
   return (
     <div className="relative w-full h-screen bg-gray-900 text-white overflow-auto">
       <div className="sticky top-0 z-10 p-4">
@@ -21,6 +22,7 @@ export function WorldMap({ completedLevelIds, onBack }: WorldMapProps) {
             key={level.id}
             level={level}
             state={getLevelState(level.id, LEVELS, completedLevelIds)}
+            onClick={onLevelClick ? () => onLevelClick(level.id) : undefined}
             data-testid={`level-node-${level.id}`}
           />
         ))}
