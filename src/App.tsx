@@ -2,7 +2,7 @@ import { MainMenu } from './features/main-menu/MainMenu'
 import { WorldMap } from './features/world-map/WorldMap'
 import { useNavigationStore } from './shared/store'
 
-function App() {
+export function App() {
   const screen = useNavigationStore((s) => s.screen)
 
   switch (screen) {
@@ -14,5 +14,3 @@ function App() {
       return <MainMenu />
   }
 }
-
-export default App
