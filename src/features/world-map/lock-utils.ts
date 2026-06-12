@@ -1,4 +1,4 @@
-import type { LevelDefinition, LockCondition, OrCondition } from "./levels"
+import type { LevelDefinition, LockCondition } from "./levels"
 
 export type LevelState = "locked" | "unlocked" | "completed"
 
@@ -15,8 +15,7 @@ function isConditionMet(
   if (Array.isArray(condition)) {
     return condition.every((id) => completedLevelIds.has(id))
   }
-  const or = condition as OrCondition
-  return or.conditions.some((sub) => isConditionMet(sub, completedLevelIds))
+  return condition.conditions.some((sub) => isConditionMet(sub, completedLevelIds))
 }
 
 export function getLevelState(

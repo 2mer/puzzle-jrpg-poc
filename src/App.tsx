@@ -4,7 +4,7 @@ import { useSaveStore } from "./providers/save-store"
 import { useScreenStore } from "./providers/screen-store"
 import { createInitialSave } from "./shared/schemas/save-data"
 
-function App() {
+export function App() {
   const screen = useScreenStore((s) => s.screen)
   const goToMainMenu = useScreenStore((s) => s.goToMainMenu)
   const goToWorldMap = useScreenStore((s) => s.goToWorldMap)
@@ -23,5 +23,3 @@ function App() {
 
   return <MainMenu onNewGame={handleNewGame} />
 }
-
-export default App
