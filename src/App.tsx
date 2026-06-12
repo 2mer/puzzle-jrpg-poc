@@ -6,8 +6,6 @@ function App() {
   const screen = useNavigationStore((s) => s.screen)
 
   switch (screen) {
-    case 'MainMenu':
-      return <MainMenu />
     case 'WorldMap':
       return <WorldMap />
     case 'Battle':
