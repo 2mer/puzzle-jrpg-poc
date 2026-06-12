@@ -1,20 +1,14 @@
-import { Button } from '@/components/ui/button'
-import { createNewSave, saveGame } from '@/shared/save'
-import { useNavigationStore } from '@/shared/store'
+import { Button } from "@/components/ui/button"
 
-export function MainMenu() {
-  const navigate = useNavigationStore((s) => s.navigate)
+interface MainMenuProps {
+  onNewGame: () => void
+}
 
-  function handleNewGame() {
-    const save = createNewSave()
-    saveGame(save)
-    navigate('WorldMap')
-  }
-
+export function MainMenu({ onNewGame }: MainMenuProps) {
   return (
-    <div>
-      <h1>Main Menu</h1>
-      <Button onClick={handleNewGame}>New Game</Button>
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
+      <h1 className="text-4xl font-bold mb-8">Puzzle JRPG</h1>
+      <Button onClick={onNewGame}>New Game</Button>
     </div>
   )
 }
