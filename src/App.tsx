@@ -11,6 +11,7 @@ export function App() {
   const battleLevelId = useScreenStore((s) => s.battleLevelId)
   const goToMainMenu = useScreenStore((s) => s.goToMainMenu)
   const goToWorldMap = useScreenStore((s) => s.goToWorldMap)
+  const goToBattle = useScreenStore((s) => s.goToBattle)
   const loadSave = useSaveStore((s) => s.loadSave)
   const completedLevelIds = useSaveStore((s) => s.completedLevelIds)
 
@@ -21,7 +22,7 @@ export function App() {
   }
 
   const handleLevelClick = (levelId: string) => {
-    useScreenStore.getState().goToBattle(levelId)
+    goToBattle(levelId)
   }
 
   const handleRun = () => {
