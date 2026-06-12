@@ -8,7 +8,7 @@ interface NavigationState {
   reset: () => void
 }
 
-const initialState = { screen: 'MainMenu' as Screen }
+const initialState: { screen: Screen } = { screen: 'MainMenu' }
 
 export const useNavigationStore = create<NavigationState>((set) => ({
   ...initialState,
