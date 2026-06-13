@@ -1,26 +1,18 @@
 import { create } from "zustand"
-import { LEVELS } from "../features/world-map/levels"
+import { LEVELS, type EnemyType } from "../features/world-map/levels"
 import { COMPANIONS } from "../shared/companions"
-import { Boss, Enemy, Skeleton } from "../shared/enemy"
+import { AdventurerEnemy, Boss, Enemy, Skeleton } from "../shared/enemy"
 import { Unit } from "../shared/unit"
 import { useSaveStore } from "./save-store"
 
-function createEnemy(type: "skeleton" | "boss" | "adventurer"): Enemy {
+function createEnemy(type: EnemyType): Enemy {
   switch (type) {
     case "skeleton":
       return new Skeleton()
     case "boss":
       return new Boss()
-    case "adventurer": {
-      return new (class extends Enemy {
-        constructor() {
-          super("Adventurer", 10, 10)
-        }
-        onTurn(): void {
-          // stub
-        }
-      })()
-    }
+    case "adventurer":
+      return new AdventurerEnemy()
   }
 }
 

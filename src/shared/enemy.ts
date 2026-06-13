@@ -9,9 +9,7 @@ export class Skeleton extends Enemy {
     super("Skeleton", 5, 5)
   }
 
-  onTurn(): void {
-    // stub
-  }
+  onTurn(): void {}
 }
 
 export class Boss extends Enemy {
@@ -19,7 +17,13 @@ export class Boss extends Enemy {
     super("Boss", 20, 10)
   }
 
-  onTurn(): void {
-    // stub
+  onTurn(): void {}
+}
+
+export class AdventurerEnemy extends Enemy {
+  constructor() {
+    super("Adventurer", 10, 10)
   }
+
+  onTurn(): void {}
 }
