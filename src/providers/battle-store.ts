@@ -87,7 +87,7 @@ function resolvePhaseTransition(state: BattleState, next: { actedUnits: boolean[
     currentUnit.tickStatusEffects()
   }
 
-  return { ...next, selectedAbilityId: null }
+  return { ...next, selectedAbilityId: null, playerParty: [...state.playerParty], enemyParty: [...state.enemyParty] }
 }
 
 export type BattlePhase = "idle" | "playerTurn" | "enemyTurn"

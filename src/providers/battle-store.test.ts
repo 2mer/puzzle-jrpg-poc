@@ -348,6 +348,21 @@ describe("useBattleStore phase/actions", () => {
     expect(useBattleStore.getState().selectedAbilityId).toBeNull()
   })
 
+  it("endTurn creates new playerParty reference so React re-renders after mutations", () => {
+    const oldParty = useBattleStore.getState().playerParty
+    useBattleStore.getState().endTurn()
+    const newParty = useBattleStore.getState().playerParty
+    expect(newParty).not.toBe(oldParty)
+  })
+
+  it("useAbility creates new playerParty reference so React re-renders after mutations", () => {
+    const { enemyParty } = useBattleStore.getState()
+    const oldParty = useBattleStore.getState().playerParty
+    useBattleStore.getState().useAbility("slash", enemyParty[0])
+    const newParty = useBattleStore.getState().playerParty
+    expect(newParty).not.toBe(oldParty)
+  })
+
   it("resets to playerTurn after enemy phase even when all players dead", () => {
     useSaveStore.getState().loadSave({
       completedLevelIds: [],
