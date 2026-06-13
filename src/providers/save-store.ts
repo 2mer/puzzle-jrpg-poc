@@ -27,6 +27,13 @@ export const useSaveStore = create<SaveState>()(
           currentParty: data.currentParty,
         }),
     }),
-    { name: SAVE_DATA_KEY },
+    {
+      name: SAVE_DATA_KEY,
+      partialize: (state) => ({
+        completedLevelIds: state.completedLevelIds,
+        unlockedCompanionIds: state.unlockedCompanionIds,
+        currentParty: state.currentParty,
+      }),
+    },
   ),
 )
