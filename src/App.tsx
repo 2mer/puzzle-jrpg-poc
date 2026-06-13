@@ -4,7 +4,7 @@ import { WorldMap } from "./features/world-map/WorldMap"
 import { LEVELS } from "./features/world-map/levels"
 import { useSaveStore } from "./providers/save-store"
 import { useScreenStore } from "./providers/screen-store"
-import { SAVE_DATA_KEY, createInitialSave } from "./shared/schemas/save-data"
+import { createInitialSave } from "./shared/schemas/save-data"
 
 export function App() {
   const screen = useScreenStore((s) => s.screen)
@@ -33,7 +33,7 @@ export function App() {
     goToWorldMap()
   }
 
-  const hasSave = localStorage.getItem(SAVE_DATA_KEY) !== null
+  const hasSave = useSaveStore((s) => s.completedLevelIds.length > 0)
 
   if (screen === "world-map") {
     return (

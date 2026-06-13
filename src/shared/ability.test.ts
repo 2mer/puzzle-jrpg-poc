@@ -5,16 +5,16 @@ import { Unit } from "./unit"
 
 describe("Ability", () => {
   it("creates an ability with name, targetSet, focusCost, and effects", () => {
-    const ability = new Ability("Slash", "single", 0, [new DamageEffect(10)])
+    const ability = new Ability("Slash", "single", 0, [new DamageEffect(5)])
     expect(ability.name).toBe("Slash")
     expect(ability.targetSet).toBe("single")
     expect(ability.focusCost).toBe(0)
-    expect(ability.effects).toEqual([new DamageEffect(10)])
+    expect(ability.effects).toEqual([new DamageEffect(5)])
   })
 
   it("canBeUsed returns true when unit has enough focus", () => {
     const unit = new Unit("Test", 10, 10)
-    const ability = new Ability("Slash", "single", 5, [new DamageEffect(10)])
+    const ability = new Ability("Slash", "single", 5, [new DamageEffect(5)])
     expect(ability.canBeUsed(unit)).toBe(true)
   })
 
@@ -99,13 +99,13 @@ describe("apply", () => {
 })
 
 describe("ABILITIES", () => {
-  it("defines Slash: single target, 0 focus, 10 damage", () => {
+  it("defines Slash: single target, 0 focus, 5 damage", () => {
     const slash = ABILITIES["slash"]
     expect(slash).toBeDefined()
     expect(slash.name).toBe("Slash")
     expect(slash.targetSet).toBe("single")
     expect(slash.focusCost).toBe(0)
-    expect(slash.effects).toEqual([new DamageEffect(10)])
+    expect(slash.effects).toEqual([new DamageEffect(5)])
   })
 
   it("defines Power Strike: single target, 5 focus, 20 damage", () => {

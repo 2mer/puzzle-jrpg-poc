@@ -28,8 +28,8 @@ describe("Effect", () => {
 
 describe("DamageEffect", () => {
   it("has a baseDamage property", () => {
-    const effect = new DamageEffect(10)
-    expect(effect.baseDamage).toBe(10)
+    const effect = new DamageEffect(5)
+    expect(effect.baseDamage).toBe(5)
   })
 
   it("affectEntity deals damage to a unit", () => {

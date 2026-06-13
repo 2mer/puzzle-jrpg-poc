@@ -65,7 +65,7 @@ describe("Skeleton", () => {
 
     skeleton.onTurn([target])
 
-    expect(target.health).toBe(10)
+    expect(target.health).toBe(15)
   })
 })
 

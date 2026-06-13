@@ -16,6 +16,9 @@ describe("Main Menu → New Game → World Map", () => {
       unlockedCompanionIds: [],
       currentParty: { unit1Id: "", unit2Id: "", unit3Id: "" },
     })
+    // zustand persist middleware writes empty state back to localStorage on setState,
+    // so clear it again to simulate "no saved game"
+    localStorage.removeItem(SAVE_DATA_KEY)
   })
 
   it("renders the Main Menu by default with a New Game button", () => {
@@ -45,14 +48,22 @@ describe("Main Menu → New Game → World Map", () => {
   })
 
   it("renders Continue button enabled when a saved game exists", () => {
-    localStorage.setItem(SAVE_DATA_KEY, JSON.stringify({ state: { completedLevelIds: ["level-1"], unlockedCompanionIds: ["adventurer"], currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" } }, version: 0 }))
+    useSaveStore.setState({
+      completedLevelIds: ["level-1"],
+      unlockedCompanionIds: ["adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
+    })
     render(<App />)
     expect(screen.getByRole("button", { name: /continue/i })).not.toBeDisabled()
   })
 
   it("transitions to World Map screen after clicking Continue with a save", async () => {
     const user = userEvent.setup()
-    localStorage.setItem(SAVE_DATA_KEY, JSON.stringify({ state: { completedLevelIds: ["level-1"], unlockedCompanionIds: ["adventurer"], currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" } }, version: 0 }))
+    useSaveStore.setState({
+      completedLevelIds: ["level-1"],
+      unlockedCompanionIds: ["adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
+    })
     render(<App />)
     await user.click(screen.getByRole("button", { name: /continue/i }))
     expect(screen.getByText(/world map/i)).toBeInTheDocument()

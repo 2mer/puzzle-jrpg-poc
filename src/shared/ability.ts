@@ -46,6 +46,6 @@ export class Ability {
 }
 
 export const ABILITIES: Record<string, Ability> = {
-  slash: new Ability("Slash", "single", 0, [new DamageEffect(10)]),
+  slash: new Ability("Slash", "single", 0, [new DamageEffect(5)]),
   "power-strike": new Ability("Power Strike", "single", 5, [new DamageEffect(20)]),
 }

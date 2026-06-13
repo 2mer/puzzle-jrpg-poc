@@ -239,11 +239,11 @@ describe("useBattleStore phase/actions", () => {
     // Give skeleton extra HP so it survives the player's attack
     useBattleStore.getState().enemyParty[0].maxHealth = 20
     useBattleStore.getState().enemyParty[0].health = 20
-    // Player uses slash (10 dmg), skeleton survives with 10 HP
+    // Player uses slash (5 dmg), skeleton survives with 15 HP
     useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[0])
     const state = useBattleStore.getState()
-    // Skeleton should have acted during enemy phase, slashing the player for 10 dmg
-    expect(state.playerParty[0].health).toBe(0)
+    // Skeleton should have acted during enemy phase, slashing the player for 5 dmg
+    expect(state.playerParty[0].health).toBe(5)
     expect(state.phase).toBe("playerTurn")
     expect(state.actedUnits).toEqual([false])
   })
@@ -266,9 +266,10 @@ describe("useBattleStore phase/actions", () => {
     // Player 1 acts on skeleton 1
     useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[1])
     const state = useBattleStore.getState()
-    // Skeleton 0 killed player 0 (10 dmg), skeleton 1 killed player 1 (10 dmg)
+    // Both skeletons target lowest-HP player (player 0). First hits for 5, second hits for 5 = dead
     expect(state.playerParty[0].health).toBe(0)
-    expect(state.playerParty[1].health).toBe(0)
+    // Player 1 was never targetted (player 0 was always lower HP)
+    expect(state.playerParty[1].health).toBe(10)
     expect(state.phase).toBe("playerTurn")
     expect(state.actedUnits).toEqual([false, false])
   })
@@ -291,8 +292,8 @@ describe("useBattleStore phase/actions", () => {
     useBattleStore.getState().endTurn()
     const state = useBattleStore.getState()
     // Only skeleton 1 should have acted (skeleton 0 is dead)
-    // skeleton 1 attacks lowest-HP player (player 0 with 10 HP, player 1 with 10 HP -> player 0)
-    expect(state.playerParty[0].health).toBe(0)
+    // skeleton 1 attacks lowest-HP player (player 0 with 10 HP, player 1 with 10 HP -> player 0) for 5 dmg
+    expect(state.playerParty[0].health).toBe(5)
     // Player 1 should not have been attacked
     expect(state.playerParty[1].health).toBe(10)
     expect(state.phase).toBe("playerTurn")
@@ -437,7 +438,7 @@ describe("useBattleStore phase/actions", () => {
     useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[0])
 
     // After enemy phase, player gets turn again, regen should have ticked
-    expect(useBattleStore.getState().playerParty[0].health).toBe(17) // 25 - 10 (skeleton attack) + 2 (regen)
+    expect(useBattleStore.getState().playerParty[0].health).toBe(22) // 25 - 5 (skeleton attack) + 2 (regen)
   })
 
   it("shield reduces incoming damage when enemy attacks", () => {
@@ -457,11 +458,11 @@ describe("useBattleStore phase/actions", () => {
     // Add shield to player (50% reduction)
     playerParty[0].addStatusEffect({ type: "shield", duration: 3, data: { percentage: 0.5 } })
 
-    // Player attacks, enemy phase runs, skeleton attacks for 10 damage but shield reduces to 5
+    // Player attacks, enemy phase runs, skeleton attacks for 5 damage but shield reduces by 50%
     useBattleStore.getState().useAbility("slash", enemyParty[0])
 
-    // Player should have taken 5 damage (10 * 0.5) from skeleton's slash
-    expect(useBattleStore.getState().playerParty[0].health).toBe(25) // 30 - 5
+    // Player should have taken 3 damage (Math.round(5 * 0.5) = 3) from skeleton's slash
+    expect(useBattleStore.getState().playerParty[0].health).toBe(27) // 30 - 3
   })
 
   it("stunned enemy skips its turn during enemy phase", () => {
@@ -527,8 +528,9 @@ describe("useBattleStore win/loss detection", () => {
       currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
     })
     useBattleStore.getState().startBattle("level-1")
-    // Adventurer has 10 HP. Skeleton does 10 damage with slash.
-    // endTurn skips the player's action, enemy phase runs, skeleton kills adventurer
+    // Adventurer has 10 HP. Skeleton does 5 damage with slash.
+    // Damage adventurer to 5 HP first, then endTurn so skeleton kills it
+    useBattleStore.getState().playerParty[0].takeDamage(5)
     useBattleStore.getState().endTurn()
     expect(useBattleStore.getState().battleStatus).toBe("lost")
   })
@@ -543,9 +545,10 @@ describe("useBattleStore win/loss detection", () => {
     // Adventurer has 10 HP. Give skeleton 20 HP so it survives the player's attack
     useBattleStore.getState().enemyParty[0].maxHealth = 20
     useBattleStore.getState().enemyParty[0].health = 20
-    // Player uses slash (10 dmg), skeleton survives with 10 HP, skeleton counterattacks for 10 dmg
+    // Damage adventurer to 5 HP first, then slash (5 dmg), skeleton survives with 15 HP and counterattacks for 5 dmg
+    useBattleStore.getState().playerParty[0].takeDamage(5)
     useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[0])
-    // Adventurer dies from skeleton counterattack
+    // Adventurer dies from skeleton counterattack (5 HP -> 0)
     expect(useBattleStore.getState().battleStatus).toBe("lost")
   })
 
