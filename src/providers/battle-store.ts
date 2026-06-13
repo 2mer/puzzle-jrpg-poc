@@ -61,6 +61,16 @@ function findFirstActableUnit(playerParty: Unit[]): number {
   return 0
 }
 
+function resolvePhaseTransition(state: BattleState, next: { actedUnits: boolean[]; currentUnitIndex: number; phase: "playerTurn" | "enemyTurn" }) {
+  if (next.phase !== "enemyTurn") {
+    return { ...next, selectedAbilityId: null }
+  }
+  processEnemyTurn(state.enemyParty, state.playerParty)
+  const actedUnits = state.playerParty.map(() => false)
+  const currentUnitIndex = findFirstActableUnit(state.playerParty)
+  return { ...next, actedUnits, currentUnitIndex, phase: "playerTurn", selectedAbilityId: null }
+}
+
 export type BattlePhase = "idle" | "playerTurn" | "enemyTurn"
 
 export interface BattleState {
@@ -127,28 +137,14 @@ export const useBattleStore = create<BattleState>((set, get) => ({
     ability.apply(target, currentUnit)
 
     const next = markCurrentUnitActed(state)
-    if (next.phase === "enemyTurn") {
-      processEnemyTurn(state.enemyParty, state.playerParty)
-      const actedUnits = state.playerParty.map(() => false)
-      const currentUnitIndex = findFirstActableUnit(state.playerParty)
-      set({ ...next, actedUnits, currentUnitIndex, phase: "playerTurn", selectedAbilityId: null })
-    } else {
-      set({ ...next, selectedAbilityId: null })
-    }
+    set(resolvePhaseTransition(state, next))
   },
   endTurn: () => {
     const state = get()
     if (state.phase !== "playerTurn") return
 
     const next = markCurrentUnitActed(state)
-    if (next.phase === "enemyTurn") {
-      processEnemyTurn(state.enemyParty, state.playerParty)
-      const actedUnits = state.playerParty.map(() => false)
-      const currentUnitIndex = findFirstActableUnit(state.playerParty)
-      set({ ...next, actedUnits, currentUnitIndex, phase: "playerTurn", selectedAbilityId: null })
-    } else {
-      set({ ...next, selectedAbilityId: null })
-    }
+    set(resolvePhaseTransition(state, next))
   },
   canBeUsed: (abilityId: string) => {
     const state = get()
