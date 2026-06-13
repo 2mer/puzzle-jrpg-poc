@@ -41,7 +41,7 @@ export function App() {
 
   if (screen === "battle" && battleLevelId) {
     const level = LEVELS.find((l) => l.id === battleLevelId)
-    return <BattleScreen levelLabel={level?.label ?? "Unknown"} onRun={handleRun} />
+    return <BattleScreen levelLabel={level?.label ?? "Unknown"} levelId={battleLevelId} onRun={handleRun} />
   }
 
   return <MainMenu onNewGame={handleNewGame} />

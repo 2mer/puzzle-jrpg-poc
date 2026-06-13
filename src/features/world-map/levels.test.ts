@@ -29,6 +29,27 @@ describe("level definitions", () => {
     expect(level5?.milestone).toBe(true)
     expect(level5?.threshold).toBe(true)
   })
+
+  it("each level defines an enemies array", () => {
+    for (const level of LEVELS) {
+      expect(Array.isArray(level.enemies)).toBe(true)
+      expect(level.enemies.length).toBeGreaterThan(0)
+    }
+  })
+
+  it("level-1 has 1 skeleton enemy", () => {
+    const level1 = LEVELS.find((l) => l.id === "level-1")
+    expect(level1?.enemies).toEqual([{ type: "skeleton" }])
+  })
+
+  it("level-7 has 3 skeleton enemies", () => {
+    const level7 = LEVELS.find((l) => l.id === "level-7")
+    expect(level7?.enemies).toEqual([
+      { type: "skeleton" },
+      { type: "skeleton" },
+      { type: "skeleton" },
+    ])
+  })
 })
 
 describe("LockCondition types", () => {
