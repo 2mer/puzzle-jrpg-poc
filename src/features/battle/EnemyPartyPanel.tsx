@@ -23,7 +23,7 @@ export function EnemyPartyPanel({ units }: EnemyPartyPanelProps) {
   let validTargets: Enemy[] = []
   if (selectedAbility && currentUnit && phase === "playerTurn") {
     const targets = selectedAbility.resolveTargets(currentUnit, playerParty, units)
-    validTargets = targets.filter((t): t is Enemy => units.includes(t as Enemy))
+    validTargets = targets.filter((t) => units.includes(t as Enemy)) as Enemy[]
   }
 
   return (

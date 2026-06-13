@@ -23,24 +23,28 @@ function createPlayerUnit(companionId: string): Unit | null {
   return new Unit(data.name, data.maxHealth, data.maxFocus, data.abilityIds)
 }
 
-function advanceToNextUnit(actedUnits: boolean[], playerParty: Unit[], currentUnitIndex: number): { currentUnitIndex: number; actedUnits: boolean[]; phase: "playerTurn" | "enemyTurn" } {
-  const newActed = [...actedUnits]
-
-  const allActed = newActed.every((a) => a) || newActed.length === 0
+function computeNextUnitState(actedUnits: boolean[], playerParty: Unit[], currentUnitIndex: number): { currentUnitIndex: number; phase: "playerTurn" | "enemyTurn" } {
+  const allActed = actedUnits.every((a) => a)
   if (allActed) {
-    return { currentUnitIndex: 0, actedUnits: newActed, phase: "enemyTurn" }
+    return { currentUnitIndex: 0, phase: "enemyTurn" }
   }
 
   let nextIndex = currentUnitIndex
-  const maxIterations = playerParty.length
-  for (let i = 0; i < maxIterations; i++) {
+  for (let i = 0; i < playerParty.length; i++) {
     nextIndex = (nextIndex + 1) % playerParty.length
-    if (!newActed[nextIndex] && !playerParty[nextIndex].isDead) {
-      return { currentUnitIndex: nextIndex, actedUnits: newActed, phase: "playerTurn" }
+    if (!actedUnits[nextIndex] && !playerParty[nextIndex].isDead) {
+      return { currentUnitIndex: nextIndex, phase: "playerTurn" }
     }
   }
 
-  return { currentUnitIndex: 0, actedUnits: newActed, phase: "enemyTurn" }
+  return { currentUnitIndex: 0, phase: "enemyTurn" }
+}
+
+function markCurrentUnitActed(state: BattleState) {
+  const actedUnits = [...state.actedUnits]
+  actedUnits[state.currentUnitIndex] = true
+  const { currentUnitIndex, phase } = computeNextUnitState(actedUnits, state.playerParty, state.currentUnitIndex)
+  return { actedUnits, currentUnitIndex, phase }
 }
 
 function findFirstActableUnit(playerParty: Unit[]): number {
@@ -110,27 +114,18 @@ export const useBattleStore = create<BattleState>((set, get) => ({
     if (!ability) return
     if (!ability.canBeUsed(currentUnit)) return
 
-    const { enemyParty } = state
-    const targets = ability.resolveTargets(currentUnit, state.playerParty, enemyParty)
+    const targets = ability.resolveTargets(currentUnit, state.playerParty, state.enemyParty)
     if (!targets.includes(target)) return
 
     ability.apply(target, currentUnit)
 
-    const actedUnits = [...state.actedUnits]
-    actedUnits[state.currentUnitIndex] = true
-
-    const { currentUnitIndex, phase } = advanceToNextUnit(actedUnits, state.playerParty, state.currentUnitIndex)
-    set({ actedUnits, currentUnitIndex, phase, selectedAbilityId: null })
+    set({ ...markCurrentUnitActed(state), selectedAbilityId: null })
   },
   endTurn: () => {
     const state = get()
     if (state.phase !== "playerTurn") return
 
-    const actedUnits = [...state.actedUnits]
-    actedUnits[state.currentUnitIndex] = true
-
-    const { currentUnitIndex, phase } = advanceToNextUnit(actedUnits, state.playerParty, state.currentUnitIndex)
-    set({ actedUnits, currentUnitIndex, phase, selectedAbilityId: null })
+    set({ ...markCurrentUnitActed(state), selectedAbilityId: null })
   },
   canBeUsed: (abilityId: string) => {
     const state = get()

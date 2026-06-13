@@ -11,6 +11,7 @@ export function PlayerPartyPanel({ units }: PlayerPartyPanelProps) {
   const phase = useBattleStore((s) => s.phase)
   const selectedAbilityId = useBattleStore((s) => s.selectedAbilityId)
   const playerParty = useBattleStore((s) => s.playerParty)
+  const enemyParty = useBattleStore((s) => s.enemyParty)
   const currentUnitIndex = useBattleStore((s) => s.currentUnitIndex)
   const useAbility = useBattleStore((s) => s.useAbility)
   const selectAbility = useBattleStore((s) => s.selectAbility)
@@ -21,10 +22,9 @@ export function PlayerPartyPanel({ units }: PlayerPartyPanelProps) {
   const selectedAbility = selectedAbilityId ? ABILITIES[selectedAbilityId] : undefined
 
   let validTargets: Unit[] = []
-  const enemyParty = useBattleStore.getState().enemyParty
   if (selectedAbility && currentUnit && phase === "playerTurn") {
     const targets = selectedAbility.resolveTargets(currentUnit, playerParty, enemyParty)
-    validTargets = targets.filter((t): t is Unit => units.includes(t as Unit))
+    validTargets = targets.filter((t) => units.includes(t))
   }
 
   return (

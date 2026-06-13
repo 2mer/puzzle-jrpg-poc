@@ -15,6 +15,12 @@ export function AbilityBar() {
   const currentUnit = playerParty[currentUnitIndex]
   if (!currentUnit || currentUnit.isDead) return null
 
+  function abilityButtonClass(isSelected: boolean, usable: boolean) {
+    if (isSelected) return "bg-blue-600 ring-2 ring-yellow-400"
+    if (usable) return "bg-gray-700 hover:bg-gray-600"
+    return "bg-gray-800 text-gray-500 cursor-not-allowed"
+  }
+
   return (
     <div className="flex flex-col items-center gap-4 mt-4" data-testid="ability-bar">
       <p className="text-white font-bold">{currentUnit.name}'s Turn</p>
@@ -31,13 +37,7 @@ export function AbilityBar() {
               key={id}
               onClick={() => selectAbility(isSelected ? null : id)}
               disabled={!usable}
-              className={`px-4 py-2 rounded text-white text-sm font-medium transition-all ${
-                isSelected
-                  ? "bg-blue-600 ring-2 ring-yellow-400"
-                  : usable
-                    ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-gray-800 text-gray-500 cursor-not-allowed"
-              }`}
+              className={`px-4 py-2 rounded text-white text-sm font-medium transition-all ${abilityButtonClass(isSelected, usable)}`}
             >
               <div>{ability.name}</div>
               <div className="text-xs opacity-70">{ability.focusCost} Focus</div>
