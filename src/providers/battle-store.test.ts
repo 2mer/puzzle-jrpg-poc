@@ -487,3 +487,95 @@ describe("useBattleStore phase/actions", () => {
     expect(useBattleStore.getState().enemyParty[0].isStunned).toBe(false)
   })
 })
+
+describe("useBattleStore win/loss detection", () => {
+  beforeEach(() => {
+    useBattleStore.setState({
+      levelId: null,
+      playerParty: [],
+      enemyParty: [],
+      battleStatus: "idle",
+      phase: "idle",
+      currentUnitIndex: 0,
+      actedUnits: [],
+      selectedAbilityId: null,
+    })
+    useSaveStore.setState({
+      completedLevelIds: [],
+      unlockedCompanionIds: [],
+      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
+    })
+  })
+
+  it("detects win when all enemies are killed by player abilities", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer", "adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "adventurer", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-3")
+    // Two skeletons with 5 HP each. Power Strike does 20 damage - kills in one hit.
+    useBattleStore.getState().useAbility("power-strike", useBattleStore.getState().enemyParty[0])
+    useBattleStore.getState().useAbility("power-strike", useBattleStore.getState().enemyParty[1])
+    expect(useBattleStore.getState().battleStatus).toBe("won")
+  })
+
+  it("detects loss when all player units die during enemy phase", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-1")
+    // Adventurer has 10 HP. Skeleton does 10 damage with slash.
+    // endTurn skips the player's action, enemy phase runs, skeleton kills adventurer
+    useBattleStore.getState().endTurn()
+    expect(useBattleStore.getState().battleStatus).toBe("lost")
+  })
+
+  it("detects loss when player unit dies from enemy counterattack after useAbility", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-1")
+    // Adventurer has 10 HP. Give skeleton 20 HP so it survives the player's attack
+    useBattleStore.getState().enemyParty[0].maxHealth = 20
+    useBattleStore.getState().enemyParty[0].health = 20
+    // Player uses slash (10 dmg), skeleton survives with 10 HP, skeleton counterattacks for 10 dmg
+    useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[0])
+    // Adventurer dies from skeleton counterattack
+    expect(useBattleStore.getState().battleStatus).toBe("lost")
+  })
+
+  it("keeps battle active when both sides have alive units", () => {
+    useBattleStore.getState().startBattle("level-1")
+    expect(useBattleStore.getState().battleStatus).toBe("active")
+  })
+
+  it("keeps battle status as active with some enemies alive", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer", "adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "adventurer", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-3")
+    // Give both skeletons high HP so they survive
+    useBattleStore.getState().enemyParty[0].maxHealth = 20
+    useBattleStore.getState().enemyParty[0].health = 20
+    useBattleStore.getState().enemyParty[1].maxHealth = 20
+    useBattleStore.getState().enemyParty[1].health = 20
+    // Give players high HP so they survive counterattacks
+    useBattleStore.getState().playerParty[0].maxHealth = 50
+    useBattleStore.getState().playerParty[0].health = 50
+    useBattleStore.getState().playerParty[1].maxHealth = 50
+    useBattleStore.getState().playerParty[1].health = 50
+    // Kill skeleton 0
+    useBattleStore.getState().useAbility("power-strike", useBattleStore.getState().enemyParty[0])
+    expect(useBattleStore.getState().battleStatus).toBe("active")
+    // Kill skeleton 1
+    useBattleStore.getState().useAbility("power-strike", useBattleStore.getState().enemyParty[1])
+    expect(useBattleStore.getState().battleStatus).toBe("won")
+  })
+})

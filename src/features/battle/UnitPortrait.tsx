@@ -42,7 +42,7 @@ export function UnitPortrait({ unit }: UnitPortraitProps) {
             <div
               key={effect.type}
               data-testid={`status-effect-${effect.type}`}
-              className={`w-2.5 h-2.5 rounded-full ${statusEffectColor(effect.type)}`}
+              className={`w-2.5 h-2.5 rounded-full animate-pulse ${statusEffectColor(effect.type)}`}
               title={`${effect.type} (${effect.duration} turns)`}
             />
           ))}

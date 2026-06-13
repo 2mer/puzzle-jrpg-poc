@@ -45,7 +45,7 @@ describe("PlayerPartyPanel", () => {
   it("clicking non-target player unit does nothing", async () => {
     const user = userEvent.setup()
     useBattleStore.getState().selectAbility("slash")
-    const { playerParty, enemyParty } = useBattleStore.getState()
+    const { playerParty } = useBattleStore.getState()
     render(<PlayerPartyPanel units={playerParty} />)
     await user.click(screen.getByText("Adventurer"))
     const state = useBattleStore.getState()

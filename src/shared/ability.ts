@@ -1,6 +1,7 @@
 import { DamageEffect } from "./effect"
-export type { Effect } from "./effect"
+import type { Effect } from "./effect"
 import type { Unit } from "./unit"
+export type { Effect }
 
 export type TargetSet = "single" | "party" | "all" | "self"
 

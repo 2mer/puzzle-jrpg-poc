@@ -87,7 +87,13 @@ function resolvePhaseTransition(state: BattleState, next: { actedUnits: boolean[
     currentUnit.tickStatusEffects()
   }
 
-  return { ...next, selectedAbilityId: null, playerParty: [...state.playerParty], enemyParty: [...state.enemyParty] }
+  const allEnemiesDead = state.enemyParty.every((e) => e.isDead)
+  const allPlayersDead = state.playerParty.every((p) => p.isDead)
+  let battleStatus: BattleState["battleStatus"] = "active"
+  if (allEnemiesDead) battleStatus = "won"
+  else if (allPlayersDead) battleStatus = "lost"
+
+  return { ...next, selectedAbilityId: null, playerParty: [...state.playerParty], enemyParty: [...state.enemyParty], battleStatus }
 }
 
 export type BattlePhase = "idle" | "playerTurn" | "enemyTurn"
