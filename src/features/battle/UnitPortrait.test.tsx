@@ -74,3 +74,42 @@ describe("UnitPortrait", () => {
     expect(focusBar.className).toContain("bg-blue")
   })
 })
+
+describe("UnitPortrait status effects", () => {
+  it("shows no status indicators when unit has no status effects", () => {
+    const unit = new Unit("Adventurer", 10, 10)
+    render(<UnitPortrait unit={unit} />)
+    expect(screen.queryByTestId("status-effects")).not.toBeInTheDocument()
+  })
+
+  it("shows a shield indicator when unit has shield", () => {
+    const unit = new Unit("Adventurer", 10, 10)
+    unit.addStatusEffect({ type: "shield", duration: 3, data: { percentage: 0.5 } })
+    render(<UnitPortrait unit={unit} />)
+    expect(screen.getByTestId("status-effects")).toBeInTheDocument()
+    expect(screen.getByTestId("status-effect-shield")).toBeInTheDocument()
+  })
+
+  it("shows a regen indicator when unit has regen", () => {
+    const unit = new Unit("Adventurer", 10, 10)
+    unit.addStatusEffect({ type: "regen", duration: 3, data: { amount: 2 } })
+    render(<UnitPortrait unit={unit} />)
+    expect(screen.getByTestId("status-effect-regen")).toBeInTheDocument()
+  })
+
+  it("shows a stun indicator when unit is stunned", () => {
+    const unit = new Unit("Adventurer", 10, 10)
+    unit.addStatusEffect({ type: "stun", duration: 1, data: {} })
+    render(<UnitPortrait unit={unit} />)
+    expect(screen.getByTestId("status-effect-stun")).toBeInTheDocument()
+  })
+
+  it("shows multiple status indicators when unit has multiple effects", () => {
+    const unit = new Unit("Adventurer", 10, 10)
+    unit.addStatusEffect({ type: "shield", duration: 3, data: { percentage: 0.5 } })
+    unit.addStatusEffect({ type: "regen", duration: 2, data: { amount: 2 } })
+    render(<UnitPortrait unit={unit} />)
+    expect(screen.getByTestId("status-effect-shield")).toBeInTheDocument()
+    expect(screen.getByTestId("status-effect-regen")).toBeInTheDocument()
+  })
+})

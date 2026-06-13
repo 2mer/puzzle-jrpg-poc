@@ -1,13 +1,9 @@
+import { DamageEffect, type Effect } from "./effect"
 import type { Unit } from "./unit"
 
 export type TargetSet = "single" | "party" | "all" | "self"
 
-export interface DamageEffect {
-  type: "damage"
-  baseDamage: number
-}
-
-export type Effect = DamageEffect
+export type { Effect }
 
 export class Ability {
   name: string
@@ -40,19 +36,17 @@ export class Ability {
     }
   }
 
-  apply(target: Unit, source?: Unit): void {
+  apply(targets: Unit[], source?: Unit): void {
     if (source) {
       source.focus = Math.max(0, source.focus - this.focusCost)
     }
     for (const effect of this.effects) {
-      if (effect.type === "damage") {
-        target.takeDamage(effect.baseDamage)
-      }
+      effect.run(targets)
     }
   }
 }
 
 export const ABILITIES: Record<string, Ability> = {
-  slash: new Ability("Slash", "single", 0, [{ type: "damage", baseDamage: 10 }]),
-  "power-strike": new Ability("Power Strike", "single", 5, [{ type: "damage", baseDamage: 20 }]),
+  slash: new Ability("Slash", "single", 0, [new DamageEffect(10)]),
+  "power-strike": new Ability("Power Strike", "single", 5, [new DamageEffect(20)]),
 }

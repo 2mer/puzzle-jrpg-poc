@@ -20,7 +20,7 @@ export class Skeleton extends Enemy {
 
     const ability = ABILITIES["slash"]
     if (ability) {
-      ability.apply(target, this)
+      ability.apply([target], this)
     }
   }
 }

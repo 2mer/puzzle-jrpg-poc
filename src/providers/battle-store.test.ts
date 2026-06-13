@@ -364,4 +364,111 @@ describe("useBattleStore phase/actions", () => {
     expect(state.phase).toBe("playerTurn")
     expect(state.actedUnits).toEqual([false, false])
   })
+
+  it("stunned player unit is skipped and stun cleared on endTurn", () => {
+    const state = useBattleStore.getState()
+    state.playerParty[0].addStatusEffect({ type: "stun", duration: 1, data: {} })
+
+    useBattleStore.getState().endTurn()
+
+    const next = useBattleStore.getState()
+    // Stun was checked before allowing action -> skipped, cleared stun
+    expect(next.playerParty[0].isStunned).toBe(false)
+    // Phase should be playerTurn after enemy phase completes
+    expect(next.phase).toBe("playerTurn")
+    // After enemy phase reset, actedUnits should be reset to [false]
+    expect(next.actedUnits).toEqual([false])
+  })
+
+  it("stunned player cannot use abilities", () => {
+    const state = useBattleStore.getState()
+    state.playerParty[0].addStatusEffect({ type: "stun", duration: 1, data: {} })
+
+    expect(useBattleStore.getState().canBeUsed("slash")).toBe(false)
+  })
+
+  it("stunned player useAbility does nothing", () => {
+    const state = useBattleStore.getState()
+    state.playerParty[0].addStatusEffect({ type: "stun", duration: 1, data: {} })
+    const { enemyParty } = state
+
+    useBattleStore.getState().useAbility("slash", enemyParty[0])
+
+    const next = useBattleStore.getState()
+    expect(next.actedUnits).toEqual([false])
+    expect(next.enemyParty[0].health).toBe(5)
+  })
+
+  it("regen ticks on player unit when turn transitions through enemy phase", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-1")
+    const { playerParty } = useBattleStore.getState()
+    // Give player extra HP so they survive enemy attacks
+    playerParty[0].maxHealth = 30
+    playerParty[0].health = 30
+    // Give skeleton extra HP so it survives
+    useBattleStore.getState().enemyParty[0].maxHealth = 20
+    useBattleStore.getState().enemyParty[0].health = 20
+    // Damage player a bit then add regen
+    playerParty[0].takeDamage(5)
+    playerParty[0].addStatusEffect({ type: "regen", duration: 3, data: { amount: 2 } })
+    expect(playerParty[0].health).toBe(25) // started at 30, took 5
+
+    // Player acts, triggering enemy phase -> regen should tick on player's turn after enemy phase ends
+    useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[0])
+
+    // After enemy phase, player gets turn again, regen should have ticked
+    expect(useBattleStore.getState().playerParty[0].health).toBe(17) // 25 - 10 (skeleton attack) + 2 (regen)
+  })
+
+  it("shield reduces incoming damage when enemy attacks", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-1")
+    const { playerParty, enemyParty } = useBattleStore.getState()
+    // Give skeleton extra HP so it survives the player attack
+    enemyParty[0].maxHealth = 20
+    enemyParty[0].health = 20
+    // Give player extra HP so damage comparison is clearer
+    playerParty[0].maxHealth = 30
+    playerParty[0].health = 30
+    // Add shield to player (50% reduction)
+    playerParty[0].addStatusEffect({ type: "shield", duration: 3, data: { percentage: 0.5 } })
+
+    // Player attacks, enemy phase runs, skeleton attacks for 10 damage but shield reduces to 5
+    useBattleStore.getState().useAbility("slash", enemyParty[0])
+
+    // Player should have taken 5 damage (10 * 0.5) from skeleton's slash
+    expect(useBattleStore.getState().playerParty[0].health).toBe(25) // 30 - 5
+  })
+
+  it("stunned enemy skips its turn during enemy phase", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-1")
+    const { enemyParty } = useBattleStore.getState()
+    // Give skeleton extra HP so it survives
+    enemyParty[0].maxHealth = 20
+    enemyParty[0].health = 20
+    // Stun the skeleton
+    enemyParty[0].addStatusEffect({ type: "stun", duration: 1, data: {} })
+
+    // Player attacks, enemy phase runs, but skeleton is stunned and skips
+    useBattleStore.getState().useAbility("slash", enemyParty[0])
+
+    // Player should NOT have taken damage because skeleton was stunned
+    expect(useBattleStore.getState().playerParty[0].health).toBe(10)
+    // Stun should be cleared after skip
+    expect(useBattleStore.getState().enemyParty[0].isStunned).toBe(false)
+  })
 })

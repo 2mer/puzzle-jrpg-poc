@@ -1,26 +1,27 @@
 import { describe, expect, it } from "vitest"
 import { Ability, ABILITIES } from "./ability"
+import { DamageEffect } from "./effect"
 import { Unit } from "./unit"
 
 describe("Ability", () => {
   it("creates an ability with name, targetSet, focusCost, and effects", () => {
-    const ability = new Ability("Slash", "single", 0, [{ type: "damage", baseDamage: 10 }])
+    const ability = new Ability("Slash", "single", 0, [new DamageEffect(10)])
     expect(ability.name).toBe("Slash")
     expect(ability.targetSet).toBe("single")
     expect(ability.focusCost).toBe(0)
-    expect(ability.effects).toEqual([{ type: "damage", baseDamage: 10 }])
+    expect(ability.effects).toEqual([new DamageEffect(10)])
   })
 
   it("canBeUsed returns true when unit has enough focus", () => {
     const unit = new Unit("Test", 10, 10)
-    const ability = new Ability("Slash", "single", 5, [{ type: "damage", baseDamage: 10 }])
+    const ability = new Ability("Slash", "single", 5, [new DamageEffect(10)])
     expect(ability.canBeUsed(unit)).toBe(true)
   })
 
   it("canBeUsed returns false when unit lacks enough focus", () => {
     const unit = new Unit("Test", 10, 10)
     unit.focus = 3
-    const ability = new Ability("Power Strike", "single", 5, [{ type: "damage", baseDamage: 20 }])
+    const ability = new Ability("Power Strike", "single", 5, [new DamageEffect(20)])
     expect(ability.canBeUsed(unit)).toBe(false)
   })
 })
@@ -75,23 +76,23 @@ describe("resolveTargets", () => {
 describe("apply", () => {
   it("applies damage effect: reduces target health", () => {
     const target = new Unit("Skeleton", 5, 5)
-    const ability = new Ability("Slash", "single", 0, [{ type: "damage", baseDamage: 3 }])
-    ability.apply(target)
+    const ability = new Ability("Slash", "single", 0, [new DamageEffect(3)])
+    ability.apply([target])
     expect(target.health).toBe(2)
   })
 
   it("applies damage effect: kills target when damage >= health", () => {
     const target = new Unit("Skeleton", 5, 5)
-    const ability = new Ability("Slash", "single", 0, [{ type: "damage", baseDamage: 5 }])
-    ability.apply(target)
+    const ability = new Ability("Slash", "single", 0, [new DamageEffect(5)])
+    ability.apply([target])
     expect(target.isDead).toBe(true)
   })
 
   it("deducts focus cost when applied", () => {
     const source = new Unit("Hero", 10, 10)
     const target = new Unit("Skeleton", 5, 5)
-    const ability = new Ability("Power Strike", "single", 5, [{ type: "damage", baseDamage: 20 }])
-    ability.apply(target, source)
+    const ability = new Ability("Power Strike", "single", 5, [new DamageEffect(20)])
+    ability.apply([target], source)
     expect(source.focus).toBe(5)
     expect(target.health).toBe(0)
   })
@@ -104,7 +105,7 @@ describe("ABILITIES", () => {
     expect(slash.name).toBe("Slash")
     expect(slash.targetSet).toBe("single")
     expect(slash.focusCost).toBe(0)
-    expect(slash.effects).toEqual([{ type: "damage", baseDamage: 10 }])
+    expect(slash.effects).toEqual([new DamageEffect(10)])
   })
 
   it("defines Power Strike: single target, 5 focus, 20 damage", () => {
@@ -113,6 +114,6 @@ describe("ABILITIES", () => {
     expect(ps.name).toBe("Power Strike")
     expect(ps.targetSet).toBe("single")
     expect(ps.focusCost).toBe(5)
-    expect(ps.effects).toEqual([{ type: "damage", baseDamage: 20 }])
+    expect(ps.effects).toEqual([new DamageEffect(20)])
   })
 })

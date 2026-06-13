@@ -50,6 +50,11 @@ function markCurrentUnitActed(state: BattleState) {
 function processEnemyTurn(enemyParty: Enemy[], playerParty: Unit[]): void {
   for (const enemy of enemyParty) {
     if (enemy.isDead) continue
+    if (enemy.isStunned) {
+      enemy.clearStatusEffect("stun")
+      continue
+    }
+    enemy.tickStatusEffects()
     enemy.onTurn(playerParty)
   }
 }
@@ -61,14 +66,28 @@ function findFirstActableUnit(playerParty: Unit[]): number {
   return 0
 }
 
-function resolvePhaseTransition(state: BattleState, next: { actedUnits: boolean[]; currentUnitIndex: number; phase: "playerTurn" | "enemyTurn" }) {
-  if (next.phase !== "enemyTurn") {
-    return { ...next, selectedAbilityId: null }
+function resolvePhaseTransition(state: BattleState, next: { actedUnits: boolean[]; currentUnitIndex: number; phase: "playerTurn" | "enemyTurn" }, skipStunCheck = false): Partial<BattleState> {
+  if (next.phase === "enemyTurn") {
+    processEnemyTurn(state.enemyParty, state.playerParty)
+    const actedUnits = state.playerParty.map(() => false)
+    const currentUnitIndex = findFirstActableUnit(state.playerParty)
+    return resolvePhaseTransition(state, { ...next, actedUnits, currentUnitIndex, phase: "playerTurn" }, true)
   }
-  processEnemyTurn(state.enemyParty, state.playerParty)
-  const actedUnits = state.playerParty.map(() => false)
-  const currentUnitIndex = findFirstActableUnit(state.playerParty)
-  return { ...next, actedUnits, currentUnitIndex, phase: "playerTurn", selectedAbilityId: null }
+
+  const currentUnit = state.playerParty[next.currentUnitIndex]
+  if (!skipStunCheck && currentUnit && !currentUnit.isDead && currentUnit.isStunned) {
+    currentUnit.clearStatusEffect("stun")
+    const actedUnits = [...next.actedUnits]
+    actedUnits[next.currentUnitIndex] = true
+    const further = computeNextUnitState(actedUnits, state.playerParty, next.currentUnitIndex)
+    return resolvePhaseTransition(state, { ...further, actedUnits })
+  }
+
+  if (currentUnit && !currentUnit.isDead) {
+    currentUnit.tickStatusEffects()
+  }
+
+  return { ...next, selectedAbilityId: null }
 }
 
 export type BattlePhase = "idle" | "playerTurn" | "enemyTurn"
@@ -126,6 +145,7 @@ export const useBattleStore = create<BattleState>((set, get) => ({
     const currentUnit = state.playerParty[state.currentUnitIndex]
     if (!currentUnit || currentUnit.isDead) return
     if (state.actedUnits[state.currentUnitIndex]) return
+    if (currentUnit.isStunned) return
 
     const ability = ABILITIES[abilityId]
     if (!ability) return
@@ -134,7 +154,7 @@ export const useBattleStore = create<BattleState>((set, get) => ({
     const targets = ability.resolveTargets(currentUnit, state.playerParty, state.enemyParty)
     if (!targets.includes(target)) return
 
-    ability.apply(target, currentUnit)
+    ability.apply([target], currentUnit)
 
     const next = markCurrentUnitActed(state)
     set(resolvePhaseTransition(state, next))
@@ -142,6 +162,10 @@ export const useBattleStore = create<BattleState>((set, get) => ({
   endTurn: () => {
     const state = get()
     if (state.phase !== "playerTurn") return
+    const currentUnit = state.playerParty[state.currentUnitIndex]
+    if (currentUnit && !currentUnit.isDead && currentUnit.isStunned) {
+      currentUnit.clearStatusEffect("stun")
+    }
 
     const next = markCurrentUnitActed(state)
     set(resolvePhaseTransition(state, next))
@@ -151,6 +175,7 @@ export const useBattleStore = create<BattleState>((set, get) => ({
     if (state.phase !== "playerTurn") return false
     const currentUnit = state.playerParty[state.currentUnitIndex]
     if (!currentUnit || currentUnit.isDead || state.actedUnits[state.currentUnitIndex]) return false
+    if (currentUnit.isStunned) return false
     const ability = ABILITIES[abilityId]
     if (!ability) return false
     return ability.canBeUsed(currentUnit)
