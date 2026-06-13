@@ -12,6 +12,7 @@ describe("LevelNode", () => {
     y: 200,
     label: "Forest Path",
     lockCondition: ["level-1"] as string[],
+    enemies: [{ type: "skeleton" as const }],
   }
 
   it("renders the level label", () => {
