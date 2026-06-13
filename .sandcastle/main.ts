@@ -61,6 +61,11 @@ const copyToWorktree = ["node_modules"];
 // Main loop
 // ---------------------------------------------------------------------------
 
+// Tracks issue IDs that have been merged in a previous iteration of this run.
+// The planner may still see stale labels from GitHub API cache lag, so we
+// filter out already-merged issues before starting Phase 2.
+const mergedIssueIds = new Set<string>();
+
 // Accumulates all issues from all iterations for the final PR.
 const allCompletedIssues: typeof issues = [];
 
@@ -100,10 +105,24 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 		break;
 	}
 
+	// Filter out issues that were already merged in a previous iteration.
+	// The planner may still see stale labels due to GitHub API cache lag.
+	const unmergedIssues = issues.filter((i) => !mergedIssueIds.has(i.id));
+
+	if (unmergedIssues.length === 0) {
+		console.log("All planned branches are already merged into HEAD. Nothing to do.");
+		continue;
+	}
+
+	const skippedCount = issues.length - unmergedIssues.length;
+	if (skippedCount > 0) {
+		console.log(`Skipping ${skippedCount} already-merged branch(es).`);
+	}
+
 	console.log(
-		`Planning complete. ${issues.length} issue(s) to work in parallel:`,
+		`Planning complete. ${unmergedIssues.length} issue(s) to work in parallel:`,
 	);
-	for (const issue of issues) {
+	for (const issue of unmergedIssues) {
 		console.log(`  ${issue.id}: ${issue.title} → ${issue.branch}`);
 	}
 
@@ -118,7 +137,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 	// -------------------------------------------------------------------------
 
 	const settled = await Promise.allSettled(
-		issues.map(async (issue) => {
+		unmergedIssues.map(async (issue) => {
 			const sandbox = await sandcastle.createSandbox({
 				branch: issue.branch,
 				sandbox: docker(),
@@ -171,7 +190,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 	for (const [i, outcome] of settled.entries()) {
 		if (outcome.status === "rejected") {
 			console.error(
-				`  ✗ ${issues[i]!.id} (${issues[i]!.branch}) failed: ${outcome.reason}`,
+				`  ✗ ${unmergedIssues[i]!.id} (${unmergedIssues[i]!.branch}) failed: ${outcome.reason}`,
 			);
 		}
 	}
@@ -179,7 +198,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 	// Only pass branches that actually produced commits to the merge phase.
 	// An agent that ran successfully but made no commits has nothing to merge.
 	const completedIssues = settled
-		.map((outcome, i) => ({ outcome, issue: issues[i]! }))
+		.map((outcome, i) => ({ outcome, issue: unmergedIssues[i]! }))
 		.filter(
 			(entry) =>
 				entry.outcome.status === "fulfilled" &&
@@ -224,6 +243,12 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 			PAIRS: completedIssues.map((i) => `- \`${i.branch}\` → #${i.id}: ${i.title}`).join("\n"),
 		},
 	});
+
+	// Remember which issues were merged so the next iteration can filter them
+	// out even if the GitHub API still shows the Sandcastle label.
+	for (const ci of completedIssues) {
+		mergedIssueIds.add(ci.id);
+	}
 
 	console.log("\nMerges complete.");
 }
