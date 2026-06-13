@@ -5,8 +5,10 @@ export interface OrCondition {
 
 export type LockCondition = string[] | OrCondition
 
+export type EnemyType = "skeleton" | "boss" | "adventurer"
+
 export interface EnemyConfig {
-  type: "skeleton" | "boss" | "adventurer"
+  type: EnemyType
 }
 
 export interface LevelDefinition {
