@@ -2,38 +2,17 @@ import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { useBattleStore } from "../../providers/battle-store"
-import { useSaveStore } from "../../providers/save-store"
 import { Unit } from "../../shared/unit"
 import { PlayerPartyPanel } from "./PlayerPartyPanel"
+import { resetBattleStores, setupBattleTest } from "./test-utils"
 
 afterEach(() => {
   cleanup()
-  useBattleStore.setState({
-    levelId: null,
-    playerParty: [],
-    enemyParty: [],
-    battleStatus: "idle",
-    phase: "idle",
-    currentUnitIndex: 0,
-    actedUnits: [],
-    selectedAbilityId: null,
-  })
-  useSaveStore.setState({
-    completedLevelIds: [],
-    unlockedCompanionIds: [],
-    currentParty: { unit1Id: "", unit2Id: "", unit3Id: "" },
-  })
+  resetBattleStores()
 })
 
 describe("PlayerPartyPanel", () => {
-  beforeEach(() => {
-    useSaveStore.setState({
-      completedLevelIds: ["level-1"],
-      unlockedCompanionIds: ["adventurer"],
-      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
-    })
-    useBattleStore.getState().startBattle("level-1")
-  })
+  beforeEach(setupBattleTest)
 
   it("renders player party units", () => {
     const unit = new Unit("Adventurer", 10, 10)

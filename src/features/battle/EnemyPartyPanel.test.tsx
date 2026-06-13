@@ -2,38 +2,17 @@ import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { useBattleStore } from "../../providers/battle-store"
-import { useSaveStore } from "../../providers/save-store"
 import { Skeleton } from "../../shared/enemy"
 import { EnemyPartyPanel } from "./EnemyPartyPanel"
+import { resetBattleStores, setupBattleTest } from "./test-utils"
 
 afterEach(() => {
   cleanup()
-  useBattleStore.setState({
-    levelId: null,
-    playerParty: [],
-    enemyParty: [],
-    battleStatus: "idle",
-    phase: "idle",
-    currentUnitIndex: 0,
-    actedUnits: [],
-    selectedAbilityId: null,
-  })
-  useSaveStore.setState({
-    completedLevelIds: [],
-    unlockedCompanionIds: [],
-    currentParty: { unit1Id: "", unit2Id: "", unit3Id: "" },
-  })
+  resetBattleStores()
 })
 
 describe("EnemyPartyPanel", () => {
-  beforeEach(() => {
-    useSaveStore.setState({
-      completedLevelIds: ["level-1"],
-      unlockedCompanionIds: ["adventurer"],
-      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
-    })
-    useBattleStore.getState().startBattle("level-1")
-  })
+  beforeEach(setupBattleTest)
 
   it("renders enemy party units", () => {
     const enemy = new Skeleton()
@@ -75,7 +54,7 @@ describe("EnemyPartyPanel", () => {
   it("clicking on highlighted target resolves ability dealing damage", async () => {
     const user = userEvent.setup()
     useBattleStore.getState().selectAbility("slash")
-    const { enemyParty, playerParty } = useBattleStore.getState()
+    const { enemyParty } = useBattleStore.getState()
     render(<EnemyPartyPanel units={enemyParty} />)
     await user.click(screen.getByText("Skeleton"))
     const state = useBattleStore.getState()
