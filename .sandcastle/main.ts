@@ -16,6 +16,9 @@
 // The outer loop repeats up to MAX_ITERATIONS times so that newly unblocked
 // issues are picked up after each round of merges.
 //
+// After all iterations, a single PR is created that closes all issues that
+// were implemented across the entire run.
+//
 // Usage:
 //   npx tsx .sandcastle/main.ts
 // Or add to package.json:
@@ -57,6 +60,9 @@ const copyToWorktree = ["node_modules"];
 // ---------------------------------------------------------------------------
 // Main loop
 // ---------------------------------------------------------------------------
+
+// Accumulates all issues from all iterations for the final PR.
+const allCompletedIssues: typeof issues = [];
 
 for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 	console.log(`\n=== Iteration ${iteration}/${MAX_ITERATIONS} ===\n`);
@@ -183,6 +189,9 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
 	const completedBranches = completedIssues.map((i) => i.branch);
 
+	// Track across iterations so the final PR knows about all of them.
+	allCompletedIssues.push(...completedIssues);
+
 	console.log(
 		`\nExecution complete. ${completedBranches.length} branch(es) with commits:`,
 	);
@@ -197,13 +206,11 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 	}
 
 	// -------------------------------------------------------------------------
-	// Phase 3: Merge
+	// Phase 3: Merge (local)
 	//
-	// One agent merges all completed branches into the current branch,
-	// resolving any conflicts and running tests to confirm everything works.
-	//
-	// The {{BRANCHES}} and {{ISSUES}} prompt arguments are lists that the agent
-	// uses to know which branches to merge and which issues to close.
+	// One agent merges each completed branch into local main and removes the
+	// Sandcastle label from the issue. No pushing to origin, no closing issues.
+	// After all iterations, a single PR (Phase 4) will close them all.
 	// -------------------------------------------------------------------------
 	await sandcastle.run({
 		hooks,
@@ -213,14 +220,41 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 		agent: sandcastle.opencode("opencode/big-pickle"),
 		promptFile: "./.sandcastle/merge-prompt.md",
 		promptArgs: {
-			// A markdown list of branch names, one per line.
-			BRANCHES: completedBranches.map((b) => `- ${b}`).join("\n"),
-			// A markdown list of issue IDs and titles, one per line.
-			ISSUES: completedIssues.map((i) => `- ${i.id}: ${i.title}`).join("\n"),
+			// A markdown list of branch → issue pairs, one per line.
+			PAIRS: completedIssues.map((i) => `- \`${i.branch}\` → #${i.id}: ${i.title}`).join("\n"),
 		},
 	});
 
-	console.log("\nBranches merged.");
+	console.log("\nMerges complete.");
+}
+
+// -------------------------------------------------------------------------
+// Phase 4: Publish (PR)
+//
+// After all iterations, create a single PR that closes all implemented issues.
+// The local `main` branch now has all the merged changes from Phase 3.
+// -------------------------------------------------------------------------
+if (allCompletedIssues.length > 0) {
+	console.log(
+		`\n=== Creating PR for ${allCompletedIssues.length} implemented issue(s) ===\n`,
+	);
+
+	await sandcastle.run({
+		hooks,
+		sandbox: docker(),
+		name: "publisher",
+		maxIterations: 1,
+		agent: sandcastle.opencode("opencode/big-pickle"),
+		promptFile: "./.sandcastle/publish-prompt.md",
+		promptArgs: {
+			// Same format as merge phase: branch → #id: title
+			PAIRS: allCompletedIssues
+				.map((i) => `- \`${i.branch}\` → #${i.id}: ${i.title}`)
+				.join("\n"),
+		},
+	});
+} else {
+	console.log("\nNo issues were implemented. Skipping PR creation.");
 }
 
 console.log("\nAll done.");

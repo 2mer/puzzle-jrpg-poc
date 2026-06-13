@@ -1,26 +1,31 @@
+# SETUP
+
+!`gh auth setup-git 2>&1`
+
 # TASK
 
-Merge the following branches into the current branch:
+Merge each branch below into local `main`, then remove the `Sandcastle` label from the issue.
 
-{{BRANCHES}}
+Do NOT push to `origin/main`. Do NOT close the issue.
 
-For each branch:
+Each entry in PAIRS gives the branch, issue ID, and issue title:
 
-1. Run `git merge <branch> --no-edit`
-2. If there are merge conflicts, resolve them intelligently by reading both sides and choosing the correct resolution
-3. After resolving conflicts, run `npm run typecheck` and `npm run test` to verify everything works
-4. If tests fail, fix the issues before proceeding to the next branch
+{{PAIRS}}
 
-After all branches are merged, make a single commit summarizing the merge.
+# INSTRUCTIONS
 
-# CLOSE ISSUES
+For each entry, extract the branch name and issue ID. Then:
 
-For each branch that was merged, close its issue using the following command:
+1. **Merge**: Ensure you are on `main`, then merge the branch:
+   ```bash
+   git merge --no-edit <branch>
+   ```
 
-`gh issue close <ID> --comment "Completed by Sandcastle"`
+2. **Remove label**:
+   ```bash
+   gh issue edit <ID> --remove-label Sandcastle
+   ```
 
-Here are all the issues:
+3. **Wait briefly** before producing output so GitHub's cache catches up.
 
-{{ISSUES}}
-
-Once you've merged everything you can, output <promise>COMPLETE</promise>.
+If all goes well, output <promise>COMPLETE</promise>.
