@@ -1,9 +1,8 @@
-import { DamageEffect, type Effect } from "./effect"
+import { DamageEffect } from "./effect"
+export type { Effect } from "./effect"
 import type { Unit } from "./unit"
 
 export type TargetSet = "single" | "party" | "all" | "self"
-
-export type { Effect }
 
 export class Ability {
   name: string

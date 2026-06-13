@@ -166,7 +166,7 @@ describe("Unit status effects", () => {
     expect(unit.hasStatusEffect("stun")).toBe(true)
   })
 
-  it("tick does not affect stun duration (stun cleared separately)", () => {
+  it("tickStatusEffects removes expired stun", () => {
     const unit = new Unit("Test", 10, 10)
     unit.addStatusEffect({ type: "stun", duration: 1, data: {} })
     // tickStatusEffects decrements all durations, including stun

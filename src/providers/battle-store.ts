@@ -79,8 +79,8 @@ function resolvePhaseTransition(state: BattleState, next: { actedUnits: boolean[
     currentUnit.clearStatusEffect("stun")
     const actedUnits = [...next.actedUnits]
     actedUnits[next.currentUnitIndex] = true
-    const further = computeNextUnitState(actedUnits, state.playerParty, next.currentUnitIndex)
-    return resolvePhaseTransition(state, { ...further, actedUnits })
+    const nextState = computeNextUnitState(actedUnits, state.playerParty, next.currentUnitIndex)
+    return resolvePhaseTransition(state, { ...nextState, actedUnits })
   }
 
   if (currentUnit && !currentUnit.isDead) {

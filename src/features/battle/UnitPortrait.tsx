@@ -1,3 +1,4 @@
+import type { StatusEffectType } from "../../shared/status-effect"
 import type { Unit } from "../../shared/unit"
 
 interface UnitPortraitProps {
@@ -11,7 +12,7 @@ function hpBarColor(health: number, maxHealth: number): string {
   return "bg-red-500"
 }
 
-function statusEffectColor(type: string): string {
+function statusEffectColor(type: StatusEffectType): string {
   switch (type) {
     case "shield":
       return "bg-blue-500"
