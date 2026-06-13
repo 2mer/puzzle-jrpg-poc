@@ -4,13 +4,15 @@ export class Unit {
   maxHealth: number
   focus: number
   maxFocus: number
+  abilityIds: string[]
 
-  constructor(name: string, maxHealth: number, maxFocus: number) {
+  constructor(name: string, maxHealth: number, maxFocus: number, abilityIds: string[] = []) {
     this.name = name
     this.maxHealth = maxHealth
     this.health = maxHealth
     this.maxFocus = maxFocus
     this.focus = maxFocus
+    this.abilityIds = abilityIds
   }
 
   get isDead(): boolean {

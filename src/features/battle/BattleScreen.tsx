@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { useBattleStore } from "../../providers/battle-store"
+import { AbilityBar } from "./AbilityBar"
 import { EnemyPartyPanel } from "./EnemyPartyPanel"
 import { PlayerPartyPanel } from "./PlayerPartyPanel"
 
@@ -28,7 +29,9 @@ export function BattleScreen({ levelLabel, levelId, onRun }: BattleScreenProps) 
         <EnemyPartyPanel units={enemyParty} />
       </div>
 
-      <div className="mt-auto mb-8">
+      <AbilityBar />
+
+      <div className="mt-auto mb-8 flex gap-4">
         <Button onClick={onRun}>Run</Button>
       </div>
     </div>

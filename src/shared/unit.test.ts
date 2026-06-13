@@ -55,3 +55,15 @@ describe("Unit", () => {
     expect(unit.health).toBe(0)
   })
 })
+
+describe("Unit abilities", () => {
+  it("accepts ability IDs in constructor", () => {
+    const unit = new Unit("Test", 10, 10, ["slash", "power-strike"])
+    expect(unit.abilityIds).toEqual(["slash", "power-strike"])
+  })
+
+  it("defaults to empty abilities", () => {
+    const unit = new Unit("Test", 10, 10)
+    expect(unit.abilityIds).toEqual([])
+  })
+})
