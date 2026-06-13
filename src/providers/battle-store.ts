@@ -47,6 +47,13 @@ function markCurrentUnitActed(state: BattleState) {
   return { actedUnits, currentUnitIndex, phase }
 }
 
+function processEnemyTurn(enemyParty: Enemy[], playerParty: Unit[]): void {
+  for (const enemy of enemyParty) {
+    if (enemy.isDead) continue
+    enemy.onTurn(playerParty)
+  }
+}
+
 function findFirstActableUnit(playerParty: Unit[]): number {
   for (let i = 0; i < playerParty.length; i++) {
     if (!playerParty[i].isDead) return i
@@ -119,13 +126,29 @@ export const useBattleStore = create<BattleState>((set, get) => ({
 
     ability.apply(target, currentUnit)
 
-    set({ ...markCurrentUnitActed(state), selectedAbilityId: null })
+    const next = markCurrentUnitActed(state)
+    if (next.phase === "enemyTurn") {
+      processEnemyTurn(state.enemyParty, state.playerParty)
+      const actedUnits = state.playerParty.map(() => false)
+      const currentUnitIndex = findFirstActableUnit(state.playerParty)
+      set({ ...next, actedUnits, currentUnitIndex, phase: "playerTurn", selectedAbilityId: null })
+    } else {
+      set({ ...next, selectedAbilityId: null })
+    }
   },
   endTurn: () => {
     const state = get()
     if (state.phase !== "playerTurn") return
 
-    set({ ...markCurrentUnitActed(state), selectedAbilityId: null })
+    const next = markCurrentUnitActed(state)
+    if (next.phase === "enemyTurn") {
+      processEnemyTurn(state.enemyParty, state.playerParty)
+      const actedUnits = state.playerParty.map(() => false)
+      const currentUnitIndex = findFirstActableUnit(state.playerParty)
+      set({ ...next, actedUnits, currentUnitIndex, phase: "playerTurn", selectedAbilityId: null })
+    } else {
+      set({ ...next, selectedAbilityId: null })
+    }
   },
   canBeUsed: (abilityId: string) => {
     const state = get()

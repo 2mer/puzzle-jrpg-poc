@@ -72,12 +72,16 @@ describe("EnemyPartyPanel", () => {
     expect(state.playerParty[0].focus).toBe(5)
   })
 
-  it("clicking on highlighted target marks unit as acted", async () => {
+  it("clicking on highlighted target marks unit as acted then resets after enemy phase", async () => {
     const user = userEvent.setup()
     useBattleStore.getState().selectAbility("slash")
     const { enemyParty } = useBattleStore.getState()
     render(<EnemyPartyPanel units={enemyParty} />)
     await user.click(screen.getByText("Skeleton"))
-    expect(useBattleStore.getState().actedUnits[0]).toBe(true)
+    const state = useBattleStore.getState()
+    // Enemy was killed, enemy phase processed (dead enemy does nothing), actedUnits reset
+    expect(state.enemyParty[0].isDead).toBe(true)
+    expect(state.actedUnits[0]).toBe(false)
+    expect(state.phase).toBe("playerTurn")
   })
 })

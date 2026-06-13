@@ -158,10 +158,11 @@ describe("useBattleStore phase/actions", () => {
     expect(useBattleStore.getState().playerParty[0].focus).toBe(5)
   })
 
-  it("useAbility marks unit as acted", () => {
+  it("useAbility marks unit as acted then resets after enemy phase", () => {
     const { enemyParty } = useBattleStore.getState()
     useBattleStore.getState().useAbility("slash", enemyParty[0])
-    expect(useBattleStore.getState().actedUnits).toEqual([true])
+    // After enemy phase processes inline, actedUnits are reset
+    expect(useBattleStore.getState().actedUnits).toEqual([false])
   })
 
   it("useAbility advances to next unit after acting", () => {
@@ -179,16 +180,19 @@ describe("useBattleStore phase/actions", () => {
     expect(state.phase).toBe("playerTurn")
   })
 
-  it("useAbility switches phase to enemyTurn after all units acted", () => {
+  it("enemyTurn processes after all units act, phase returns to playerTurn", () => {
     const { enemyParty } = useBattleStore.getState()
     useBattleStore.getState().useAbility("slash", enemyParty[0])
-    expect(useBattleStore.getState().phase).toBe("enemyTurn")
+    const state = useBattleStore.getState()
+    expect(state.phase).toBe("playerTurn")
+    expect(state.actedUnits).toEqual([false])
   })
 
-  it("endTurn marks unit as acted and advances", () => {
+  it("endTurn marks unit as acted and advances to enemy phase", () => {
     useBattleStore.getState().endTurn()
-    expect(useBattleStore.getState().actedUnits).toEqual([true])
-    expect(useBattleStore.getState().phase).toBe("enemyTurn")
+    const state = useBattleStore.getState()
+    expect(state.actedUnits).toEqual([false])
+    expect(state.phase).toBe("playerTurn")
   })
 
   it("canBeUsed returns true for affordable ability", () => {
@@ -225,6 +229,101 @@ describe("useBattleStore phase/actions", () => {
     expect(state.phase).toBe("playerTurn")
   })
 
+  it("enemy deals damage to player during enemy phase when enemy survives", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-1")
+    // Give skeleton extra HP so it survives the player's attack
+    useBattleStore.getState().enemyParty[0].maxHealth = 20
+    useBattleStore.getState().enemyParty[0].health = 20
+    // Player uses slash (10 dmg), skeleton survives with 10 HP
+    useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[0])
+    const state = useBattleStore.getState()
+    // Skeleton should have acted during enemy phase, slashing the player for 10 dmg
+    expect(state.playerParty[0].health).toBe(0)
+    expect(state.phase).toBe("playerTurn")
+    expect(state.actedUnits).toEqual([false])
+  })
+
+  it("multiple enemies each act in order during enemy phase", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer", "adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "adventurer", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-3")
+    // Give both skeletons extra HP so they survive
+    useBattleStore.getState().enemyParty[0].maxHealth = 20
+    useBattleStore.getState().enemyParty[0].health = 20
+    useBattleStore.getState().enemyParty[1].maxHealth = 20
+    useBattleStore.getState().enemyParty[1].health = 20
+    // Player 0 acts on skeleton 0
+    useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[0])
+    expect(useBattleStore.getState().currentUnitIndex).toBe(1)
+    // Player 1 acts on skeleton 1
+    useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[1])
+    const state = useBattleStore.getState()
+    // Skeleton 0 killed player 0 (10 dmg), skeleton 1 killed player 1 (10 dmg)
+    expect(state.playerParty[0].health).toBe(0)
+    expect(state.playerParty[1].health).toBe(0)
+    expect(state.phase).toBe("playerTurn")
+    expect(state.actedUnits).toEqual([false, false])
+  })
+
+  it("only alive enemies act during enemy phase", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer", "adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "adventurer", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-3")
+    // Kill skeleton 0, skeleton 1 survives with extra HP
+    useBattleStore.getState().enemyParty[0].takeDamage(99)
+    useBattleStore.getState().enemyParty[1].maxHealth = 20
+    useBattleStore.getState().enemyParty[1].health = 20
+    // Player 0 acts -> advances to player 1
+    useBattleStore.getState().endTurn()
+    expect(useBattleStore.getState().currentUnitIndex).toBe(1)
+    // Player 1 acts -> triggers enemy phase
+    useBattleStore.getState().endTurn()
+    const state = useBattleStore.getState()
+    // Only skeleton 1 should have acted (skeleton 0 is dead)
+    // skeleton 1 attacks lowest-HP player (player 0 with 10 HP, player 1 with 10 HP -> player 0)
+    expect(state.playerParty[0].health).toBe(0)
+    // Player 1 should not have been attacked
+    expect(state.playerParty[1].health).toBe(10)
+    expect(state.phase).toBe("playerTurn")
+  })
+
+  it("player can act again after enemy phase completes", () => {
+    useSaveStore.getState().loadSave({
+      completedLevelIds: [],
+      unlockedCompanionIds: ["adventurer", "adventurer"],
+      currentParty: { unit1Id: "adventurer", unit2Id: "adventurer", unit3Id: "" },
+    })
+    useBattleStore.getState().startBattle("level-3")
+    // Give players extra HP so they survive enemy attacks
+    useBattleStore.getState().playerParty[0].maxHealth = 30
+    useBattleStore.getState().playerParty[0].health = 30
+    useBattleStore.getState().playerParty[1].maxHealth = 30
+    useBattleStore.getState().playerParty[1].health = 30
+    // Give both skeletons extra HP so they survive player attacks
+    useBattleStore.getState().enemyParty[0].maxHealth = 20
+    useBattleStore.getState().enemyParty[0].health = 20
+    useBattleStore.getState().enemyParty[1].maxHealth = 20
+    useBattleStore.getState().enemyParty[1].health = 20
+    // Both players act -> enemy phase runs -> back to playerTurn
+    useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[0])
+    useBattleStore.getState().useAbility("slash", useBattleStore.getState().enemyParty[1])
+    // After enemy phase, player 0 should be current again and can act
+    expect(useBattleStore.getState().currentUnitIndex).toBe(0)
+    expect(useBattleStore.getState().phase).toBe("playerTurn")
+    expect(useBattleStore.getState().canBeUsed("slash")).toBe(true)
+  })
+
   it("selectAbility sets selectedAbilityId", () => {
     useBattleStore.getState().selectAbility("slash")
     expect(useBattleStore.getState().selectedAbilityId).toBe("slash")
@@ -249,7 +348,7 @@ describe("useBattleStore phase/actions", () => {
     expect(useBattleStore.getState().selectedAbilityId).toBeNull()
   })
 
-  it("switches to enemyTurn when all remaining units are dead", () => {
+  it("resets to playerTurn after enemy phase even when all players dead", () => {
     useSaveStore.getState().loadSave({
       completedLevelIds: [],
       unlockedCompanionIds: ["adventurer", "adventurer"],
@@ -261,6 +360,8 @@ describe("useBattleStore phase/actions", () => {
     useBattleStore.getState().playerParty[1].takeDamage(99)
     // endTurn marks unit 0 as acted (dead), advance should find no alive units -> enemyTurn
     useBattleStore.getState().endTurn()
-    expect(useBattleStore.getState().phase).toBe("enemyTurn")
+    const state = useBattleStore.getState()
+    expect(state.phase).toBe("playerTurn")
+    expect(state.actedUnits).toEqual([false, false])
   })
 })

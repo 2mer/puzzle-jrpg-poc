@@ -71,11 +71,16 @@ describe("AbilityBar", () => {
     expect(button?.className).toContain("ring")
   })
 
-  it("clicking End Turn calls endTurn", async () => {
+  it("clicking End Turn advances turn and triggers enemy phase", async () => {
     const user = userEvent.setup()
     render(<AbilityBar />)
     await user.click(screen.getByRole("button", { name: /end turn/i }))
-    expect(useBattleStore.getState().actedUnits[0]).toBe(true)
+    const state = useBattleStore.getState()
+    // Enemy phase ran: skeleton damaged the player
+    expect(state.playerParty[0].health).toBeLessThan(10)
+    // actedUnits reset after enemy phase
+    expect(state.actedUnits[0]).toBe(false)
+    expect(state.phase).toBe("playerTurn")
   })
 
   it("does not render when phase is enemyTurn", () => {
